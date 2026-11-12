@@ -1,0 +1,37 @@
+name: Build Reward King APK
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unzip project
+        id: find
+        run: |
+          unzip -q RewardKing.zip -d project
+          DIR=$(dirname "$(find project -name settings.gradle.kts | head -1)")
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+          ls -la "$DIR"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.9
+
+      - name: Build debug APK
+        working-directory: ${{ steps.find.outputs.dir }}
+        run: gradle assembleDebug --no-daemon --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reward-king-debug-apk
+          path: ${{ steps.find.outputs.dir }}/app/build/outputs/apk/debug/*.apk
